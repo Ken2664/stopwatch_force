@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#000000">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="時計">
+  <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.svg">
+
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/icon-192.svg">
+
+  <title>時計</title>
+
+  <link rel="stylesheet" href="/css/reset.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/stopwatch.css">
+  <link rel="stylesheet" href="/css/tabbar.css">
+  <link rel="stylesheet" href="/css/modal.css">
+</head>
+<body>
+  <main id="app" class="app">
+
+    <section class="stopwatch-screen" aria-label="ストップウォッチ">
+
+      <div class="time-display-wrap">
+        <div id="timeDisplay" class="time-display" aria-live="off">00:00.00</div>
+      </div>
+
+      <div class="button-row">
+        <button id="leftBtn" class="circle-btn lap-btn" type="button" disabled>
+          <span class="btn-label">リセット</span>
+        </button>
+        <div class="page-indicator" aria-hidden="true">
+          <span class="dot active"></span>
+          <span class="dot"></span>
+        </div>
+        <button id="rightBtn" class="circle-btn start-btn" type="button">
+          <span class="btn-label">開始</span>
+        </button>
+      </div>
+
+      <div class="laps-wrap">
+        <ul id="lapList" class="lap-list" role="list"></ul>
+      </div>
+
+    </section>
+
+    <nav class="tabbar" role="tablist" aria-label="クロックメニュー">
+      <button class="tabbar-item" type="button" role="tab" aria-selected="false" data-tab="world">
+        <img class="tab-icon" src="/assets/images/tabbar-clock.svg" alt="">
+        <span class="tab-label">世界時計</span>
+        <span id="zoneC" class="secret-zone secret-zone-c" aria-hidden="true"></span>
+      </button>
+      <button class="tabbar-item" type="button" role="tab" aria-selected="false" data-tab="alarm">
+        <img class="tab-icon" src="/assets/images/tabbar-alarm.svg" alt="">
+        <span class="tab-label">アラーム</span>
+      </button>
+      <button class="tabbar-item active" type="button" role="tab" aria-selected="true" data-tab="stopwatch">
+        <img class="tab-icon" src="/assets/images/tabbar-stopwatch.svg" alt="">
+        <span class="tab-label">ストップウォッチ</span>
+      </button>
+      <button class="tabbar-item" type="button" role="tab" aria-selected="false" data-tab="timer">
+        <img class="tab-icon" src="/assets/images/tabbar-timer.svg" alt="">
+        <span class="tab-label">タイマー</span>
+      </button>
+    </nav>
+
+    <span id="zoneA" class="secret-zone secret-zone-a" aria-hidden="true"></span>
+    <span id="zoneB" class="secret-zone secret-zone-b" aria-hidden="true"></span>
+    <span id="zoneD" class="secret-zone secret-zone-d" aria-hidden="true"></span>
+
+  </main>
+
+  <div id="settingsModal" class="modal-overlay" hidden aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-header">
+        <h2 id="modalTitle" class="modal-title">設定</h2>
+      </header>
+      <div class="modal-body">
+        <div class="modal-row">
+          <label for="targetInput" class="modal-label">ターゲット数字 (1-52)</label>
+          <input id="targetInput" class="modal-input" type="number" min="1" max="52" inputmode="numeric" pattern="[0-9]*">
+        </div>
+        <div class="modal-row">
+          <span class="modal-label">フォースモード</span>
+          <label class="toggle">
+            <input id="forceToggle" type="checkbox">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="modal-row">
+          <span class="modal-label">現在のターゲット</span>
+          <span id="currentTargetView" class="modal-value">17</span>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button id="modalCloseBtn" class="modal-btn" type="button">完了</button>
+      </footer>
+    </div>
+  </div>
+
+  <script src="/js/register-sw.js" defer></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>

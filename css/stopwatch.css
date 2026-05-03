@@ -1,0 +1,198 @@
+.stopwatch-screen {
+  position: absolute;
+  top: var(--safe-top);
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tabbar-height) + var(--safe-bottom));
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+.time-display-wrap {
+  position: absolute;
+  top: 160px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.time-display {
+  display: inline-block;
+  color: var(--fg);
+  font-size: clamp(72px, 21vw, 102px);
+  font-weight: 100;
+  letter-spacing: 0px;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.button-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 60%;
+  transform: translateY(-50%);
+  height: 84px;
+}
+
+.button-row #leftBtn {
+  position: absolute;
+  left: 32px;
+  top: 0;
+}
+
+.button-row #rightBtn {
+  position: absolute;
+  right: 32px;
+  top: 0;
+}
+
+.page-indicator {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.page-indicator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #555555;
+  display: inline-block;
+}
+
+.page-indicator .dot.active {
+  background: #ffffff;
+}
+
+.circle-btn {
+  position: relative;
+  flex: 0 0 auto;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--fg);
+  background: var(--neutral-bg);
+  transition: transform 0.08s ease, opacity 0.08s ease, background-color 0.15s ease, color 0.15s ease;
+  outline: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.circle-btn::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #000000;
+  pointer-events: none;
+}
+
+.circle-btn::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.circle-btn:disabled {
+  opacity: 0.5;
+}
+
+.circle-btn.is-pressed:not(:disabled) {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+.circle-btn.start-btn {
+  background: var(--start-bg);
+  color: var(--start-text);
+}
+
+.circle-btn.stop-btn {
+  background: var(--stop-bg);
+  color: var(--stop-text);
+}
+
+.circle-btn.lap-btn {
+  background: var(--neutral-bg);
+  color: var(--neutral-text);
+}
+
+.btn-label {
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.laps-wrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(60% + 66px);
+  bottom: 0;
+  padding: 0 20px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 90%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 90%, transparent 100%);
+}
+
+.lap-list {
+  width: 100%;
+}
+
+.lap-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 4px;
+  border-bottom: 0.5px solid var(--separator);
+  font-size: 17px;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.lap-list li:first-child {
+  border-top: none;
+}
+
+.lap-list li .lap-name {
+  color: inherit;
+}
+
+.lap-list li .lap-time {
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.lap-list li.fastest {
+  color: #34c759;
+}
+
+.lap-list li.slowest {
+  color: #ff3b30;
+}
+
+.lap-list li.live {
+  color: var(--fg);
+}

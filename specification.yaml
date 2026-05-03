@@ -1,0 +1,416 @@
+project:
+  name: "magic_stopwatch_force_app"
+  document_type: "実装仕様書"
+  version: "1.0.0"
+  last_updated: "2026-05-03"
+  related_document: "requirements.yaml"
+
+tech_stack:
+  frontend:
+    language: "HTML5 / CSS3 / Vanilla JavaScript (ES2022)"
+    rationale: >-
+      タイマー精度とタッチ応答性が最重要のため、フレームワークの
+      オーバーヘッドを避け Vanilla JS を選定。ビルド設定も最小化。
+    optional_alternatives:
+      - "React (Vite + TypeScript) — 状態管理が複雑化した場合"
+      - "Vue 3 (Composition API) — UI差し替えを多用する場合"
+  pwa:
+    manifest: "manifest.json"
+    service_worker: "sw.js"
+    cache_strategy: "Cache First（静的アセット） + Network Fallback"
+  build_and_deploy:
+    bundler: "不要（Vanilla構成）"
+    hosting: "Vercel"
+    framework_preset: "Other / Static"
+    auto_deploy:
+      trigger: "git push origin main"
+      preview_branch: "PR毎の preview URL を自動生成"
+
+directory_structure:
+  root:
+    - "index.html"
+    - "manifest.json"
+    - "sw.js"
+    - "vercel.json"
+    - "README.md"
+    - "assets/"
+    - "css/"
+    - "js/"
+  assets:
+    - "icons/icon-192.png"
+    - "icons/icon-512.png"
+    - "icons/apple-touch-icon.png"
+    - "images/tabbar-clock.svg"
+    - "images/tabbar-alarm.svg"
+    - "images/tabbar-stopwatch.svg"
+    - "images/tabbar-timer.svg"
+    - "images/analog-dial.svg"
+  css:
+    - "reset.css"
+    - "main.css"
+    - "stopwatch.css"
+    - "tabbar.css"
+    - "modal.css"
+  js:
+    - "app.js"
+    - "stopwatch.js"
+    - "force.js"
+    - "ui.js"
+    - "secret.js"
+    - "modal.js"
+    - "register-sw.js"
+
+ui_specification:
+  theme:
+    mode: "Dark固定"
+    background: "#000000"
+    foreground: "#ffffff"
+  typography:
+    font_family: >-
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Helvetica, Arial, sans-serif
+    font_variant_numeric: "tabular-nums"
+    note: "数字の幅がブレないよう tabular-nums を必ず指定"
+  display:
+    timer:
+      format: "MM:SS.cc"
+      font_size: "94px（縦持ち時の純正準拠）"
+      font_weight: "200"
+      color: "#ffffff"
+      letter_spacing: "-2px"
+      align: "center"
+  buttons:
+    common:
+      shape: "circle"
+      diameter: "86px"
+      border: "2px solid (背景色より2階調明るい色)"
+      active_animation: "transform: scale(0.96); opacity: 0.8;"
+    start:
+      bg: "#1c4c2b"
+      text: "#34c759"
+      label: "開始"
+    stop:
+      bg: "#5c1918"
+      text: "#ff3b30"
+      label: "停止"
+    lap_or_reset:
+      bg: "#333333"
+      text: "#ffffff"
+      labels:
+        running: "ラップ"
+        stopped: "リセット"
+  layout:
+    safe_area:
+      top: "env(safe-area-inset-top)"
+      bottom: "env(safe-area-inset-bottom)"
+    timer_position: "画面中央上寄り"
+    button_row_position: "画面中央下寄り"
+    tabbar_position: "画面最下部"
+    indicator:
+      type: "ページインジケーター（ドット2個）"
+      position: "ボタン行とタブバーの間"
+      colors:
+        active: "#ffffff"
+        inactive: "#555555"
+  tabbar:
+    height: "83px（safe-area込み）"
+    background: "#1c1c1e"
+    border_top: "0.5px solid #2c2c2e"
+    items:
+      - { id: "world",     label: "世界時計",     icon: "tabbar-clock.svg",     tint: "#8e8e93" }
+      - { id: "alarm",     label: "アラーム",     icon: "tabbar-alarm.svg",     tint: "#8e8e93" }
+      - { id: "stopwatch", label: "ストップウォッチ", icon: "tabbar-stopwatch.svg", tint: "#ff9500", active: true }
+      - { id: "timer",     label: "タイマー",     icon: "tabbar-timer.svg",     tint: "#8e8e93" }
+
+global_css_rules:
+  body:
+    overflow: "hidden"
+    overscroll_behavior_y: "none"
+    touch_action: "none"
+    user_select: "none"
+    webkit_touch_callout: "none"
+    webkit_tap_highlight_color: "transparent"
+  html:
+    height: "100%"
+    background: "#000000"
+  meta_viewport: >-
+    width=device-width, initial-scale=1.0, maximum-scale=1.0,
+    minimum-scale=1.0, user-scalable=no, viewport-fit=cover
+
+state_machine:
+  states:
+    - id: "IDLE"
+      description: "初期状態。00:00.00 表示。リセットボタンは無効"
+      buttons:
+        right: "開始"
+        left: "リセット（無効）"
+      transitions:
+        on_start_press: "RUNNING"
+    - id: "RUNNING"
+      description: "計測中。リアルタイム描画"
+      buttons:
+        right: "停止"
+        left: "ラップ"
+      transitions:
+        on_stop_press_normal: "STOPPED"
+        on_stop_press_force_on: "STOPPED_FORCED"
+        on_lap_press: "RUNNING（ラップ追加のみ）"
+    - id: "STOPPED"
+      description: "通常停止。実時間がそのまま表示されている"
+      buttons:
+        right: "開始"
+        left: "リセット"
+      transitions:
+        on_start_press: "RUNNING（再開）"
+        on_reset_press: "IDLE（フォースフラグもOFF）"
+    - id: "STOPPED_FORCED"
+      description: "フォース停止。ミリ秒部分のみ強制値で上書き済み"
+      buttons:
+        right: "開始"
+        left: "リセット"
+      transitions:
+        on_start_press: "RUNNING（実時間を継続して再開する点に注意）"
+        on_reset_press: "IDLE（フォースフラグもOFF）"
+
+stopwatch_engine:
+  internal_data:
+    start_time: "performance.now() で記録した開始時刻（ms）"
+    accumulated: "一時停止時に積算した経過時間（ms）"
+    is_running: "boolean"
+    laps: "Array<number>（ラップ毎の経過時間 ms）"
+  rendering:
+    method: "requestAnimationFrame ループによる毎フレーム再計算"
+    formula: |
+      elapsed = accumulated + (is_running ? performance.now() - start_time : 0)
+    formatter: |
+      function format(ms) {
+        const totalCs = Math.floor(ms / 10);   // 1/100秒
+        const cs = totalCs % 100;
+        const totalSec = Math.floor(totalCs / 100);
+        const sec = totalSec % 60;
+        const min = Math.floor(totalSec / 60);
+        const pad = (n, w = 2) => String(n).padStart(w, '0');
+        return `${pad(min)}:${pad(sec)}.${pad(cs)}`;
+      }
+  precision_notes:
+    - "Date.now() ではなく performance.now() を使うこと（高精度＆単調増加）"
+    - "ブラウザのバックグラウンド復帰時は積算値で復元する"
+
+force_logic:
+  flags:
+    is_force_enabled:
+      type: "boolean"
+      default: false
+    target_centisecond:
+      type: "integer"
+      range: "0..99"
+      description: "1〜52 などターゲット数字。マジシャン演技に応じて設定"
+  trigger_event: "停止ボタンの touchstart / pointerdown"
+  algorithm: |
+    function applyForce(elapsedMs, target) {
+      // 整数秒部分を保持し、ミリ秒2桁部分（下位100ms未満を centisec 単位）だけ書き換える
+      const wholeSecMs = Math.floor(elapsedMs / 1000) * 1000;
+      const forcedCs = Math.max(0, Math.min(99, target));
+      return wholeSecMs + forcedCs * 10;
+    }
+  apply_flow:
+    - "1. touchstart 検出（click より早い）"
+    - "2. 現在の elapsedMs を取得"
+    - "3. is_force_enabled が true なら applyForce(elapsedMs, target_centisecond) を実行"
+    - "4. 取得結果を表示用変数に格納"
+    - "5. requestAnimationFrame ループを停止し、最終フレームを描画"
+    - "6. 状態を STOPPED_FORCED に遷移"
+  reset_behavior:
+    - "リセットボタン押下時、is_force_enabled を false に戻す"
+    - "target_centisecond は維持（次回演技でも同じ値を使う場合があるため）"
+
+secret_ui:
+  description: "観客には見えない隠しタップ領域および操作"
+  zones:
+    - id: "ZONE_A"
+      label: "領域A（左上隅）"
+      position:
+        top: "0px"
+        left: "0px"
+        width: "60px"
+        height: "60px"
+      style: "完全透明（background: transparent; opacity: 0; pointer-events: auto;）"
+      action: "tap"
+      effect:
+        is_force_enabled: true
+        target_centisecond: 17
+        haptic: "navigator.vibrate(10)（任意・端末依存）"
+    - id: "ZONE_B"
+      label: "領域B（右上隅）"
+      position:
+        top: "0px"
+        right: "0px"
+        width: "60px"
+        height: "60px"
+      style: "完全透明"
+      action: "tap"
+      effect:
+        is_force_enabled: true
+        target_centisecond: 34
+        haptic: "navigator.vibrate(10)"
+    - id: "ZONE_C"
+      label: "領域C（タブバー「世界時計」部分）"
+      position: "タブバー内 #tab-world 上のオーバーレイ"
+      action: "long_press（800ms 以上）"
+      effect: "設定モーダルを開く"
+    - id: "ZONE_D_RESERVED"
+      label: "領域D（左下隅・予約）"
+      action: "tap"
+      effect: "is_force_enabled = false（緊急キャンセル用）"
+  visual_feedback:
+    - "シークレット操作の発動時に、画面上に視覚効果を一切出さない"
+    - "ハプティクス（短いバイブレーション）でマジシャンに発動を伝える"
+
+settings_modal:
+  trigger: "ZONE_C の長押し（800ms）"
+  background: "#000000（背景と完全同化）"
+  layout:
+    - field: "ターゲット数字入力"
+      type: "number input"
+      min: 1
+      max: 52
+      default: 17
+      note: >-
+        1〜52 はカードに対応。内部では 0〜99 のミリ秒値として扱うが、
+        UIでは 1〜52 をそのまま入力させ、ミリ秒値として代入する
+        （例：入力17 → target_centisecond = 17）。
+    - field: "現在のフォースフラグ表示"
+      type: "boolean toggle"
+    - field: "閉じるボタン"
+      type: "button"
+      label: "完了"
+  close_action:
+    - "完了ボタンタップでモーダルを閉じる"
+    - "モーダル外側タップでも閉じる"
+    - "閉じた瞬間に変更内容を localStorage に保存"
+  persistence:
+    storage: "localStorage"
+    key: "magic_sw_settings_v1"
+    schema:
+      target_centisecond: "integer (1..52)"
+      last_updated: "ISO8601 string"
+
+event_handling:
+  touch_priority: "touchstart > pointerdown > click"
+  rationale: >-
+    iOS Safari の click イベントには約300msの遅延があるため、
+    観客が「自分が押した瞬間に止まった」と錯覚する応答速度を
+    実現するには touchstart の使用が必須。
+  global_listeners:
+    - event: "gesturestart"
+      handler: "preventDefault()（ピンチズーム防止）"
+    - event: "dblclick"
+      handler: "preventDefault()（ダブルタップズーム防止）"
+    - event: "contextmenu"
+      handler: "preventDefault()（長押しメニュー防止）"
+    - event: "selectstart"
+      handler: "preventDefault()（テキスト選択防止）"
+
+pwa_specification:
+  manifest_json:
+    name: "時計"
+    short_name: "時計"
+    start_url: "/"
+    display: "standalone"
+    orientation: "portrait"
+    background_color: "#000000"
+    theme_color: "#000000"
+    icons:
+      - src: "/assets/icons/icon-192.png"
+        sizes: "192x192"
+        type: "image/png"
+      - src: "/assets/icons/icon-512.png"
+        sizes: "512x512"
+        type: "image/png"
+  apple_meta_tags:
+    - '<meta name="apple-mobile-web-app-capable" content="yes">'
+    - '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">'
+    - '<meta name="apple-mobile-web-app-title" content="時計">'
+    - '<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">'
+  service_worker:
+    file: "sw.js"
+    cache_name: "magic-sw-v1"
+    cached_assets:
+      - "/"
+      - "/index.html"
+      - "/manifest.json"
+      - "/css/main.css"
+      - "/css/stopwatch.css"
+      - "/css/tabbar.css"
+      - "/css/modal.css"
+      - "/js/app.js"
+      - "/js/stopwatch.js"
+      - "/js/force.js"
+      - "/js/ui.js"
+      - "/js/secret.js"
+      - "/js/modal.js"
+      - "/assets/icons/icon-192.png"
+      - "/assets/icons/icon-512.png"
+      - "/assets/images/tabbar-clock.svg"
+      - "/assets/images/tabbar-alarm.svg"
+      - "/assets/images/tabbar-stopwatch.svg"
+      - "/assets/images/tabbar-timer.svg"
+    strategy: "Cache First, Falling back to Network"
+
+vercel_configuration:
+  file: "vercel.json"
+  contents:
+    cleanUrls: true
+    trailingSlash: false
+    headers:
+      - source: "/sw.js"
+        headers:
+          - { key: "Cache-Control", value: "no-store" }
+          - { key: "Service-Worker-Allowed", value: "/" }
+      - source: "/(.*)"
+        headers:
+          - { key: "X-Content-Type-Options", value: "nosniff" }
+          - { key: "Referrer-Policy", value: "no-referrer" }
+
+testing_plan:
+  unit:
+    - "format(ms) が常に MM:SS.cc 形式で返ること"
+    - "applyForce が target=17 の時、整数秒+0.17秒で返ること"
+    - "applyForce が target=99 / target=0 の境界で正しく動くこと"
+  integration:
+    - "ZONE_A タップ → 開始 → 停止 で .17 表示になること"
+    - "ZONE_B タップ → 開始 → 停止 で .34 表示になること"
+    - "リセット後、フォースフラグがOFFに戻ること"
+    - "再度開始 → 停止で通常の実時間が表示されること"
+  manual_field_test:
+    - "iPhone実機で『ホーム画面に追加』後、フルスクリーンで起動すること"
+    - "オフライン状態でも全機能が動作すること"
+    - "観客から見て純正アプリと判別できないこと"
+    - "停止ボタン押下〜表示停止の遅延を実機で確認"
+
+development_notes:
+  critical_warnings:
+    - "停止ボタンの判定は必ず touchstart または pointerdown を使うこと（click は遅延あり）"
+    - "body の overflow / touch-action / overscroll-behavior を必ず無効化すること"
+    - "Webアプリだとバレる最大原因は『画面のスクロール挙動』なので徹底的に殺すこと"
+    - "console.log は本番ビルド時に必ず除去（マジシャンの存在を悟られないため）"
+    - "シークレット領域は z-index を最上位に置きつつ、background-color: transparent で完全に不可視にすること"
+  recommended_improvements_future:
+    - "URLパラメータでターゲット値を即セット可能にする（?t=17）"
+    - "シェイクジェスチャでフォースフラグをトグル"
+    - "複数フォースモード（時間部分のフォース、ラップフォース等）の追加"
+    - "音声トリガー（特定のキーワードでフォース発動）"
+
+acceptance_criteria_mapping:
+  - requirement_id: "F-001"
+    test: "MM:SS.cc 形式でリアルタイム描画される"
+  - requirement_id: "F-002"
+    test: "緑→赤のボタン色遷移が純正と区別不可"
+  - requirement_id: "S-002"
+    test: "フォースON状態で停止 → ミリ秒部分が指定値になる"
+  - requirement_id: "S-005"
+    test: "リセット後にフォースフラグがOFF、2回目は通常動作"
+  - requirement_id: "NFR-003"
+    test: "機内モードでも全画面・全機能が動作"
+  - requirement_id: "NFR-004"
+    test: "停止押下から表示停止までの体感遅延がゼロ"

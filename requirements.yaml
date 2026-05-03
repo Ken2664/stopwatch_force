@@ -1,0 +1,191 @@
+project:
+  name: "magic_stopwatch_force_app"
+  display_name: "マジック用 ストップウォッチWebアプリ"
+  version: "1.0.0"
+  document_type: "要件定義書"
+  last_updated: "2026-05-03"
+  description: >-
+    iPhone（iOS）標準「時計」アプリ内の「ストップウォッチ」機能を
+    視覚的・操作的に完全模倣したWebアプリケーション。
+    観客には純正アプリを操作していると錯覚させつつ、
+    マジシャンが意図した特定の数字（ミリ秒の1〜52など）を
+    ストップ時に確実に表示させる「フォース機能」を搭載する。
+  purpose:
+    - "メンタルマジック・カードマジックの実演ツールとして利用"
+    - "観客に渡しても純正アプリと判別できないクオリティを実現"
+    - "PWA化により現場のオフライン環境でも安定動作"
+
+target_environment:
+  primary_device: "iPhone"
+  os_version: "iOS 16 以降"
+  primary_browser: "Safari"
+  recommended_mode: "ホーム画面に追加（フルスクリーンPWA動作）"
+  hosting: "Vercel"
+  deployment_strategy:
+    repository: "GitHub"
+    branch: "main"
+    auto_deploy: true
+
+stakeholders:
+  - role: "マジシャン（プライマリユーザー）"
+    needs:
+      - "観客にバレないシークレット操作"
+      - "現場でターゲット数字を変更できる柔軟性"
+      - "確実なフォース成功率"
+  - role: "観客（被演技者）"
+    perception:
+      - "iPhone純正のストップウォッチアプリだと信じて操作する"
+      - "ボタンを押した瞬間に止まったと感じる体験"
+
+functional_requirements:
+  surface_features:
+    description: "観客に見える、純正完全模倣の機能群"
+    items:
+      - id: "F-001"
+        name: "時計表示"
+        spec:
+          format: "MM:SS.cc（分:秒.1/100秒）"
+          example: "00:00.00"
+          update_method: "リアルタイム描画（requestAnimationFrame使用）"
+      - id: "F-002"
+        name: "開始/停止ボタン"
+        states:
+          idle_or_stopped:
+            label: "開始"
+            color_text: "#34c759"
+            color_bg: "#1c4c2b"
+          running:
+            label: "停止"
+            color_text: "#ff3b30"
+            color_bg: "#5c1918"
+        action: "タップで計測開始/停止をトグル"
+      - id: "F-003"
+        name: "ラップ/リセットボタン"
+        states:
+          running:
+            label: "ラップ"
+            function: "現在の経過時間をラップリストに追加"
+          stopped:
+            label: "リセット"
+            function: "計測時間とラップを全クリア"
+          idle:
+            label: "リセット"
+            disabled: true
+        color_text: "#ffffff"
+        color_bg: "#333333"
+      - id: "F-004"
+        name: "アナログ/デジタル表示切り替え"
+        priority: "Medium"
+        spec:
+          gesture: "左右スワイプ"
+          fallback: "ダミーのページインジケーター（点）のみ表示も可"
+      - id: "F-005"
+        name: "下部タブメニュー（ダミー）"
+        items:
+          - "世界時計"
+          - "アラーム"
+          - "ストップウォッチ（選択中）"
+          - "タイマー"
+        behavior: "視覚表示のみ。タップしても画面遷移しない"
+
+  secret_features:
+    description: "マジシャンのみが利用するシークレット機能群"
+    items:
+      - id: "S-001"
+        name: "フォース発動フラグ"
+        description: >-
+          マジシャンが特定の隠し領域をタップすることで、
+          次回ストップ時のフォースモードをONにする。
+        default_state: "OFF"
+      - id: "S-002"
+        name: "スナップストップ・フォースロジック"
+        description: >-
+          フォースモードONの状態で観客が「停止」を押下した瞬間、
+          内部の実際の計測時間を無視し、あらかじめ設定された
+          ミリ秒2桁（例：.17）を強制表示して停止する。
+        rules:
+          - "秒・分の整数部分は実時間をそのまま表示し、自然さを保つ"
+          - "ミリ秒2桁（00〜99）のみがターゲット値で上書きされる"
+          - "停止と同時に画面再描画し、観客に違和感を与えない"
+      - id: "S-003"
+        name: "動的フォース値変更"
+        priority: "High"
+        description: >-
+          複数の隠しタップ領域に異なるターゲット値を割り当て、
+          観客の選択や演技の流れに応じて瞬時に切り替える。
+        examples:
+          - "領域A → ターゲット 17（ハートの4）"
+          - "領域B → ターゲット 34（別カード）"
+      - id: "S-004"
+        name: "設定モーダル（マジシャン専用）"
+        description: >-
+          現場でターゲット数字（1〜52）を直接入力・変更するための
+          隠しUI。背景と同化させ、特定操作でのみ表示。
+        access_method: "下部タブバー「世界時計」付近の長押し"
+      - id: "S-005"
+        name: "リセット時のフォースフラグ自動OFF"
+        description: >-
+          観客が「リセット」を押した時点で、フォースフラグを
+          自動的にOFFに戻す。直後に観客が再操作しても、
+          2回目は通常のストップウォッチとして動作し、
+          完全にクリーンに見える。
+
+non_functional_requirements:
+  ui_fidelity:
+    id: "NFR-001"
+    name: "完全なUI再現性"
+    requirements:
+      - "フォントは San Francisco / system-ui の等幅数字設定を使用"
+      - "ボタンの色味・角丸・配置を純正と寸分違わず再現"
+      - "タップ時の沈み込み（押下フィードバック）アニメーションをCSSで再現"
+      - "Webアプリであることを観客に悟らせない"
+
+  layout_lock:
+    id: "NFR-002"
+    name: "レスポンシブ無効化（固定化）"
+    requirements:
+      - "ピンチイン・アウトによるズームを無効化"
+      - "ダブルタップによる拡大を無効化"
+      - "横スクロール・縦スクロールを完全に禁止"
+      - "プルダウンによる更新動作を無効化"
+
+  offline_support:
+    id: "NFR-003"
+    name: "オフライン動作"
+    requirements:
+      - "Service Workerを導入し、PWAとしてオフラインで動作"
+      - "通信環境の悪い現場での事故を防ぐため必須"
+      - "manifest.json により standalone モードで起動"
+
+  performance:
+    id: "NFR-004"
+    name: "応答性能"
+    requirements:
+      - "停止ボタン押下から画面停止までの遅延 16ms 以下"
+      - "click 遅延（300ms）を排除するため touchstart / pointerdown を使用"
+      - "60fps を維持した時計描画"
+
+  security_and_privacy:
+    id: "NFR-005"
+    name: "秘匿性"
+    requirements:
+      - "シークレット領域はDOM上も視覚的に区別不可とする"
+      - "デバッグログ・コンソール出力を本番ビルドで無効化"
+      - "ソースコード閲覧時にも機能の存在が分かりにくいよう変数名を抽象化"
+
+constraints:
+  - "ネイティブアプリ化は行わず、Webブラウザ（PWA）のみで完結する"
+  - "サーバーサイド処理は不要（フルクライアント完結）"
+  - "外部APIに依存しない（オフラインで動作するため）"
+
+success_criteria:
+  - "観客10人にテストし、全員がiPhone純正アプリだと回答すること"
+  - "フォース成功率 100%（10回演技中10回成功）"
+  - "停止ボタン押下から表示停止までの体感遅延がゼロであること"
+  - "オフライン環境でも全機能が問題なく動作すること"
+
+out_of_scope:
+  - "Android端末向けの最適化（iOSデザイン優先のため）"
+  - "サーバー連携機能（ランキング、共有、同期等）"
+  - "実際のタイマー機能、世界時計機能、アラーム機能の実装"
+  - "アナログ時計の動的描画（ダミー画像で代替可）"
