@@ -27,16 +27,18 @@
 }
 
 .app {
-  /* iOS standalone PWA + viewport-fit=cover では html/body の
-     height:100% が layout viewport (safe-bottom を除外) に
-     解決されることがあり、`.app` の下端が画面最下端に届かない。
-     viewport 単位で明示し、visual viewport を確実に埋める。 */
+  /* iOS standalone PWA では viewport 単位や inset:0 だけでは
+     visual viewport の下端まで届かないケースがある。
+     JS 側で window.innerHeight (実際に可視な viewport 高) を
+     --app-vh に書き込み、それを最終手段として使う。
+     CSS のみで動く環境向けのフォールバックも併記する。 */
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
-  height: 100vh; /* 古い iOS 向けフォールバック */
-  height: 100dvh; /* iOS 15.4+ / Safari 15.4+ : 動的 viewport */
+  height: 100vh; /* 古い iOS / 非対応環境向けフォールバック */
+  height: 100dvh; /* 動的 viewport (iOS 15.4+) */
+  height: var(--app-vh, 100dvh); /* JS で計測した実値が最優先 */
   background: var(--bg);
   color: var(--fg);
   overflow: hidden;

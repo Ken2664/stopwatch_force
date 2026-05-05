@@ -209,7 +209,40 @@ function bindAll() {
   });
 }
 
+/**
+ * iOS standalone PWA で `.app` の高さが visual viewport 下端まで
+ * 届かないケースがあるため、window.innerHeight を CSS 変数に
+ * 書き込んで `.app` の height として使えるようにする。
+ *
+ * - resize / orientationchange で再同期する
+ * - visualViewport API があればそちらを優先（iOS で URL バー
+ *   や仮想キーボードの出現でも正確な値が取れる）
+ */
+function syncAppViewportHeight() {
+  const h =
+    (window.visualViewport && window.visualViewport.height) ||
+    window.innerHeight ||
+    document.documentElement.clientHeight;
+  if (h && Number.isFinite(h)) {
+    document.documentElement.style.setProperty('--app-vh', `${h}px`);
+  }
+}
+
+function bindViewportSync() {
+  syncAppViewportHeight();
+  window.addEventListener('resize', syncAppViewportHeight);
+  window.addEventListener('orientationchange', () => {
+    /* orientationchange 直後は寸法が安定しないので少し待ってから再計測 */
+    setTimeout(syncAppViewportHeight, 100);
+    setTimeout(syncAppViewportHeight, 400);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncAppViewportHeight);
+  }
+}
+
 function bootstrap() {
+  bindViewportSync();
   ui.renderTime(0);
   ui.setRightAsStart();
   ui.setLeftAsReset({ disabled: true });
