@@ -55,7 +55,7 @@
     <nav class="tabbar" role="tablist" aria-label="クロックメニュー">
       <button class="tabbar-item" type="button" role="tab" aria-selected="false" data-tab="world">
         <img class="tab-icon" src="/assets/images/tabbar-clock.svg" alt="">
-        <span class="tab-label">世界</span>
+        <span class="tab-label">世界時計</span>
         <span id="zoneC" class="secret-zone secret-zone-c" aria-hidden="true"></span>
       </button>
       <button class="tabbar-item" type="button" role="tab" aria-selected="false" data-tab="alarm">
@@ -74,7 +74,6 @@
 
     <span id="zoneA" class="secret-zone secret-zone-a" aria-hidden="true"></span>
     <span id="zoneB" class="secret-zone secret-zone-b" aria-hidden="true"></span>
-    <span id="zoneD" class="secret-zone secret-zone-d" aria-hidden="true"></span>
 
   </main>
 
@@ -85,19 +84,20 @@
       </header>
       <div class="modal-body">
         <div class="modal-row">
-          <label for="targetInput" class="modal-label">ターゲット数字 (1-52)</label>
-          <input id="targetInput" class="modal-input" type="number" min="1" max="52" inputmode="numeric" pattern="[0-9]*">
+          <label for="targetAInput" class="modal-label">Aの数字 (1-52)</label>
+          <input id="targetAInput" class="modal-input" type="number" min="1" max="52" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div class="modal-row">
-          <span class="modal-label">フォースモード</span>
-          <label class="toggle">
-            <input id="forceToggle" type="checkbox">
-            <span class="toggle-slider"></span>
-          </label>
+          <label for="targetBInput" class="modal-label">Bの数字 (1-52)</label>
+          <input id="targetBInput" class="modal-input" type="number" min="1" max="52" inputmode="numeric" pattern="[0-9]*">
         </div>
         <div class="modal-row">
-          <span class="modal-label">現在のターゲット</span>
-          <span id="currentTargetView" class="modal-value">17</span>
+          <span class="modal-label">現在のA</span>
+          <span id="currentTargetAView" class="modal-value">17</span>
+        </div>
+        <div class="modal-row">
+          <span class="modal-label">現在のB</span>
+          <span id="currentTargetBView" class="modal-value">34</span>
         </div>
       </div>
       <footer class="modal-footer">

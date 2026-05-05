@@ -1,12 +1,11 @@
 /**
  * Secret zones controller.
- * 観客から見えない隠しタップ領域（A/B/C/D）の入力を捕捉し、
+ * 観客から見えない隠しタップ領域（A/B/C）の入力を捕捉し、
  * フォース制御に流す。
  *
- * - ZONE_A: 左上タップ → フォースON、ターゲット 34
- * - ZONE_B: 右上タップ → フォースON、ターゲット 34
+ * - ZONE_A: 左上タップ → フォースON、ターゲット = force.targetA
+ * - ZONE_B: 右上タップ → フォースON、ターゲット = force.targetB
  * - ZONE_C: タブバー「世界時計」長押し（800ms）→ 設定モーダル
- * - ZONE_D: 左下タップ → 緊急キャンセル（フォースOFF）
  */
 
 const LONG_PRESS_MS = 800;
@@ -33,7 +32,6 @@ function initSecretZones({ force, openSettings }) {
   const zoneA = document.getElementById('zoneA');
   const zoneB = document.getElementById('zoneB');
   const zoneC = document.getElementById('zoneC');
-  const zoneD = document.getElementById('zoneD');
 
   const stopAll = (e) => {
     if (e.cancelable) e.preventDefault();
@@ -43,7 +41,7 @@ function initSecretZones({ force, openSettings }) {
   if (zoneA) {
     const handler = (e) => {
       stopAll(e);
-      force.enable(34);
+      force.enable(force.targetA);
       safeVibrate(VIBRATION_MS);
     };
     zoneA.addEventListener('touchstart', handler, { passive: false });
@@ -53,21 +51,11 @@ function initSecretZones({ force, openSettings }) {
   if (zoneB) {
     const handler = (e) => {
       stopAll(e);
-      force.enable(34);
+      force.enable(force.targetB);
       safeVibrate(VIBRATION_MS);
     };
     zoneB.addEventListener('touchstart', handler, { passive: false });
     zoneB.addEventListener('pointerdown', handler);
-  }
-
-  if (zoneD) {
-    const handler = (e) => {
-      stopAll(e);
-      force.disable();
-      safeVibrate([VIBRATION_MS, 50, VIBRATION_MS]);
-    };
-    zoneD.addEventListener('touchstart', handler, { passive: false });
-    zoneD.addEventListener('pointerdown', handler);
   }
 
   if (zoneC) {

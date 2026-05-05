@@ -1,6 +1,7 @@
 /**
  * Settings modal controller.
- * 現場でターゲット数字 (1..52) を変更するためのマジシャン専用UI。
+ * 現場で zoneA / zoneB に割り当てるターゲット数字 (1..52) を
+ * 個別に変更するためのマジシャン専用UI。
  * 開閉・入力反映・永続化（force.js 経由）を担う。
  */
 
@@ -13,24 +14,31 @@ class SettingsModal {
   constructor(force) {
     this.force = force;
     this.overlay = document.getElementById('settingsModal');
-    this.input = document.getElementById('targetInput');
-    this.toggle = document.getElementById('forceToggle');
-    this.currentView = document.getElementById('currentTargetView');
+    this.inputA = document.getElementById('targetAInput');
+    this.inputB = document.getElementById('targetBInput');
+    this.viewA = document.getElementById('currentTargetAView');
+    this.viewB = document.getElementById('currentTargetBView');
     this.closeBtn = document.getElementById('modalCloseBtn');
 
-    this.input.min = String(MIN_TARGET);
-    this.input.max = String(MAX_TARGET);
+    [this.inputA, this.inputB].forEach((input) => {
+      if (!input) return;
+      input.min = String(MIN_TARGET);
+      input.max = String(MAX_TARGET);
+    });
 
     this._bind();
   }
 
   open() {
-    this.input.value = String(this.force.target);
-    this.toggle.checked = this.force.enabled;
-    this.currentView.textContent = String(this.force.target);
+    if (this.inputA) this.inputA.value = String(this.force.targetA);
+    if (this.inputB) this.inputB.value = String(this.force.targetB);
+    if (this.viewA) this.viewA.textContent = String(this.force.targetA);
+    if (this.viewB) this.viewB.textContent = String(this.force.targetB);
     this.overlay.hidden = false;
     this.overlay.setAttribute('aria-hidden', 'false');
-    setTimeout(() => this.input.focus({ preventScroll: true }), 50);
+    setTimeout(() => {
+      if (this.inputA) this.inputA.focus({ preventScroll: true });
+    }, 50);
   }
 
   close() {
@@ -43,25 +51,39 @@ class SettingsModal {
   }
 
   _commit() {
-    const v = normalizeTarget(this.input.value);
-    this.force.setTarget(v);
-    if (this.toggle.checked) {
-      this.force.enable(v);
-    } else {
-      this.force.disable();
+    if (this.inputA) {
+      const a = normalizeTarget(this.inputA.value, this.force.targetA);
+      this.force.setTargetA(a);
+      this.inputA.value = String(a);
+      if (this.viewA) this.viewA.textContent = String(a);
     }
-    this.currentView.textContent = String(v);
-    this.input.value = String(v);
+    if (this.inputB) {
+      const b = normalizeTarget(this.inputB.value, this.force.targetB);
+      this.force.setTargetB(b);
+      this.inputB.value = String(b);
+      if (this.viewB) this.viewB.textContent = String(b);
+    }
   }
 
   _bind() {
-    this.input.addEventListener('input', () => {
-      const v = normalizeTarget(this.input.value);
-      this.currentView.textContent = String(v);
-    });
-    this.input.addEventListener('blur', () => {
-      this.input.value = String(normalizeTarget(this.input.value));
-    });
+    if (this.inputA) {
+      this.inputA.addEventListener('input', () => {
+        const v = normalizeTarget(this.inputA.value, this.force.targetA);
+        if (this.viewA) this.viewA.textContent = String(v);
+      });
+      this.inputA.addEventListener('blur', () => {
+        this.inputA.value = String(normalizeTarget(this.inputA.value, this.force.targetA));
+      });
+    }
+    if (this.inputB) {
+      this.inputB.addEventListener('input', () => {
+        const v = normalizeTarget(this.inputB.value, this.force.targetB);
+        if (this.viewB) this.viewB.textContent = String(v);
+      });
+      this.inputB.addEventListener('blur', () => {
+        this.inputB.value = String(normalizeTarget(this.inputB.value, this.force.targetB));
+      });
+    }
 
     this.closeBtn.addEventListener('click', () => this.close());
     this.closeBtn.addEventListener('touchstart', (e) => {
