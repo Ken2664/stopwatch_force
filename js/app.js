@@ -219,11 +219,22 @@ function bindAll() {
  *   や仮想キーボードの出現でも正確な値が取れる）
  */
 function syncAppViewportHeight() {
-  const h =
-    (window.visualViewport && window.visualViewport.height) ||
-    window.innerHeight ||
-    document.documentElement.clientHeight;
-  if (h && Number.isFinite(h)) {
+  const candidates = [
+    window.visualViewport && window.visualViewport.height,
+    window.innerHeight,
+    document.documentElement.clientHeight,
+    /* iOS standalone PWA (特に iOS 26+) で上記が visual viewport
+       下端まで届かないケースの最終手段。standalone なら screen.height
+       がデバイス画面の論理 px 高さとほぼ一致する。 */
+    window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+      ? window.screen && window.screen.height
+      : null,
+  ];
+  let h = 0;
+  for (const v of candidates) {
+    if (typeof v === 'number' && Number.isFinite(v) && v > h) h = v;
+  }
+  if (h > 0) {
     document.documentElement.style.setProperty('--app-vh', `${h}px`);
   }
 }
