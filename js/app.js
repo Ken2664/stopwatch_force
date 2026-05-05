@@ -219,22 +219,17 @@ function bindAll() {
  *   や仮想キーボードの出現でも正確な値が取れる）
  */
 function syncAppViewportHeight() {
-  const candidates = [
-    window.visualViewport && window.visualViewport.height,
-    window.innerHeight,
-    document.documentElement.clientHeight,
-    /* iOS standalone PWA (特に iOS 26+) で上記が visual viewport
-       下端まで届かないケースの最終手段。standalone なら screen.height
-       がデバイス画面の論理 px 高さとほぼ一致する。 */
-    window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
-      ? window.screen && window.screen.height
-      : null,
-  ];
-  let h = 0;
-  for (const v of candidates) {
-    if (typeof v === 'number' && Number.isFinite(v) && v > h) h = v;
-  }
-  if (h > 0) {
+  /* visualViewport.height が最も正確に「現在描画されている viewport」
+     の高さを返す。iOS 26 standalone PWA ではここが WebView の実描画
+     領域に一致するため、これを採用する。
+     screen.height は iOS 26 の standalone PWA では device 全画面分
+     の論理 px を返してしまい WebView より大きくなるので使わない
+     (使うとタブバーが画面外に押し出され、見切れる)。 */
+  const h =
+    (window.visualViewport && window.visualViewport.height) ||
+    window.innerHeight ||
+    document.documentElement.clientHeight;
+  if (h && Number.isFinite(h) && h > 0) {
     document.documentElement.style.setProperty('--app-vh', `${h}px`);
   }
 }
