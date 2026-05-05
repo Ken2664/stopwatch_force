@@ -11,15 +11,6 @@
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-
-  /* DEBUG: シークレットゾーン可視化用。確認後に元に戻すこと。 */
-  opacity: 1;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
-  line-height: 64px;
-  border: 1px dashed rgba(255, 255, 255, 0.6);
 }
 
 .secret-zone-a {
@@ -30,13 +21,6 @@
   left: 0;
   width: 64px;
   height: 64px;
-
-  /* DEBUG */
-  background: rgba(255, 59, 48, 0.45); /* red */
-}
-
-.secret-zone-a::before {
-  content: "A";
 }
 
 .secret-zone-b {
@@ -45,13 +29,6 @@
   right: 0;
   width: 64px;
   height: 64px;
-
-  /* DEBUG */
-  background: rgba(52, 199, 89, 0.45); /* green */
-}
-
-.secret-zone-b::before {
-  content: "B";
 }
 
 .secret-zone-d {
@@ -59,13 +36,6 @@
   left: 0;
   width: 64px;
   height: 64px;
-
-  /* DEBUG */
-  background: rgba(255, 149, 0, 0.45); /* orange */
-}
-
-.secret-zone-d::before {
-  content: "D";
 }
 
 .secret-zone-c {
@@ -75,23 +45,6 @@
   height: 100%;
   background: transparent;
   opacity: 0;
-
-  /* DEBUG: zoneC はタブバー「世界時計」ボタン全体を覆う透明オーバーレイ。
-     可視化のため薄い青で塗り、左上に "C" ラベルを表示する。 */
-  opacity: 1;
-  background: rgba(10, 132, 255, 0.35); /* blue */
-  outline: 1px dashed rgba(255, 255, 255, 0.6);
-  outline-offset: -1px;
-}
-
-.secret-zone-c::before {
-  content: "C";
-  position: absolute;
-  top: 2px;
-  left: 4px;
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
 }
 
 .modal-overlay {

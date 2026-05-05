@@ -4,7 +4,7 @@
  * 通信環境の悪い現場での事故を防ぐため必須。
  */
 
-const CACHE_NAME = 'magic-sw-v4';
+const CACHE_NAME = 'magic-sw-v5';
 
 const PRECACHE_ASSETS = [
   '/',
