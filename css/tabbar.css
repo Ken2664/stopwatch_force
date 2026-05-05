@@ -11,6 +11,11 @@
   align-items: stretch;
   justify-content: space-around;
   z-index: 10;
+
+  /* DEBUG: タブバー上端と safe-area 領域を可視化。確認後に元へ戻す。 */
+  border-top: 2px solid magenta;
+  outline: 2px dashed cyan;
+  outline-offset: -2px;
 }
 
 .tabbar-item {

@@ -1,5 +1,9 @@
 .secret-zone {
-  position: absolute;
+  /* iOS standalone (PWA) モードでは .app (position: fixed; inset:0) の
+     底辺が visual viewport の底辺と一致しないケースが報告されている。
+     position: fixed に変更し、シークレットゾーンを viewport に直接
+     アンカーすることで、tabbar との位置ズレを防ぐ。 */
+  position: fixed;
   display: block;
   background: transparent;
   opacity: 0;
