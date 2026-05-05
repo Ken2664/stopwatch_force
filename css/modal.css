@@ -23,7 +23,10 @@
 }
 
 .secret-zone-a {
-  top: 0;
+  /* iOS standalone モードでは black-translucent ステータスバーが
+     上端 safe-area-inset-top 領域のタッチを iOS 側に吸収するため、
+     zoneA をその下から開始させてタップ可能領域に丸ごと収める。 */
+  top: var(--safe-top);
   left: 0;
   width: 64px;
   height: 64px;
@@ -37,7 +40,8 @@
 }
 
 .secret-zone-b {
-  top: 0;
+  /* zoneA と同じ理由で safe-top 分だけ下げる。 */
+  top: var(--safe-top);
   right: 0;
   width: 64px;
   height: 64px;
