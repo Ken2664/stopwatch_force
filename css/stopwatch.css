@@ -10,7 +10,12 @@
 
 .time-display-wrap {
   position: absolute;
-  top: 160px;
+  /* iOS standalone モードでは .stopwatch-screen が safe-area-inset-top
+     (≒ステータスバー / Dynamic Island 分) だけ下にオフセットされる。
+     ここで safe-top を相殺することで、ホーム画面起動時も PC ブラウザ
+     表示時とほぼ同じスクリーン上の縦位置にタイマーを保つ。
+     最低 20px の余白は確保する。 */
+  top: max(20px, calc(160px - var(--safe-top)));
   left: 0;
   right: 0;
   text-align: center;
